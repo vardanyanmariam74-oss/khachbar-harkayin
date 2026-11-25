@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Հարկային Խաչբառ-Մրցույթ | ՀՀ Հարկային օրենսգիրք</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Noto Sans Armenian', 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+
+    /* Crossword Cell Styling */
+    .cw-grid {
+      display: grid;
+      grid-template-columns: repeat(15, minmax(0, 1fr));
+      gap: 2px;
+      background-color: #cbd5e1;
+      padding: 4px;
+      border-radius: 12px;
+      box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.08);
+      user-select: none;
+    }
+
+    .cw-cell {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background-color: #1e293b;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .cw-cell.active-letter {
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+
+    .cw-cell.active-letter:hover {
+      background-color: #f1f5f9;
+    }
+
+    .cw-cell.in-active-word {
+      background-color: #e0e7ff !important;
+    }
+
+    .cw-cell.is-selected {
+      background-color: #4f46e5 !important;
+      box-shadow: 0 0 0 2px #312e81;
+      z-index: 10;
+    }
+
+    .cw-cell.is-selected input {
+      color: #ffffff !important;
+      caret-color: #ffffff;
+    }
+
+    .cw-cell.is-selected .cw-num {
+      color: #c7d2fe !important;
+    }
+
+    .cw-cell.status-correct {
+      background-color: #dcfce7 !important;
+      box-shadow: inset 0 0 0 1.5px #16a34a;
+    }
+
+    .cw-cell.status-correct input {
+      color: #15803d !important;
+    }
+
+    .cw-cell.status-wrong {
+      background-color: #fee2e2 !important;
+      box-shadow: inset 0 0 0 1.5px #dc2626;
+    }
+
+    .cw-cell.status-wrong input {
+      color: #b91c1c !important;
+    }
+
+    .cw-num {
+      position: absolute;
+      top: 1px;
+      left: 3px;
+      font-size: clamp(7px, 1.3vw, 10px);
+      font-weight: 700;
+      line-height: 1;
+      color: #475569;
+      pointer-events: none;
+    }
+
+    .cw-input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      text-align: center;
+      font-weight: 800;
+      font-size: clamp(11px, 2.1vw, 17px);
+      text-transform: uppercase;
+      color: #0f172a;
+      outline: none;
+      padding: 0;
+      padding-top: 4px;
+      cursor: pointer;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    .animate-pulse-soft {
+      animation: pulseSoft 2s infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+
+  <!-- Top Academic / Fintech Navigation Bar -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex items-center justify-center shadow-md font-extrabold text-lg">
+          ՀՕ
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-xl font-extrabold tracking-tight text-slate-900">
+              Հարկային Խաչբառ-Մրցույթ
+            </h1>
+            <span class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              10 Բառ • ՀՀ ՀՕ
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">
+            Թեմա 12.1, 12.2 և Թեմա 1-2 • Հարկման համակարգեր, պարտավորություններ և փաստաթղթեր
+          </p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs & Timer -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Active Student Badge & Live Timer -->
+        <div id="studentStatusBar" class="hidden items-center gap-2 sm:gap-3 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl">
+          <div class="hidden md:flex flex-col text-right">
+            <span id="headerStudentName" class="text-xs font-bold text-slate-800 leading-tight"></span>
+            <span id="headerStudentGroup" class="text-[11px] text-slate-500 leading-tight"></span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs">
+            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="timerDisplay" class="font-mono font-bold text-sm text-slate-800">00:00</span>
+          </div>
+        </div>
+
+        <nav class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button onclick="switchView('quiz')" id="navQuizBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-indigo-700 shadow-xs">
+            Խաչբառ
+          </button>
+          <button onclick="switchView('leaderboard')" id="navLeaderboardBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+            <span>Առաջատարներ</span>
+            <span id="leaderboardCountBadge" class="px-1.5 py-0.2 text-[11px] rounded-full bg-indigo-100 text-indigo-700 font-bold">0</span>
+          </button>
+          <button onclick="switchView('lecturer')" id="navLecturerBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900">
+            Դասախոս
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast / Notification Banner (Replaces alert) -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-6">
+
+    <!-- ==================== VIEW 1: STUDENT LOGIN SCREEN ==================== -->
+    <section id="loginSection" class="max-w-lg mx-auto my-4 sm:my-10">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 px-6 py-7 text-white">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold mb-3">
+            <span>🎓 Ակադեմիական Մրցույթ</span>
+          </div>
+          <h2 class="text-2xl font-extrabold tracking-tight">Մուտք Հարկային Խաչբառ</h2>
+          <p class="text-indigo-100 text-sm mt-1">
+            Լրացրեք Ձեր տվյալները մրցույթը սկսելու համար։ Ժամանակաչափը կմիանա անմիջապես մեկնարկից հետո։
+          </p>
+        </div>
+
+        <form id="loginForm" class="p-6 space-y-4">
+          <div>
+            <label for="firstName" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Անուն *
+            </label>
+            <input
+              type="text"
+              id="firstName"
+              required
+              placeholder="Օրինակ՝ Արամ"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm font-medium"
+            />
+          </div>
+
+          <div>
+            <label for="lastName" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Ազգանուն *
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              required
+              placeholder="Օրինակ՝ Սարգսյան"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm font-medium"
+            />
+          </div>
+
+          <div>
+            <label for="studentGroup" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Խումբ / Կուրս *
+            </label>
+            <input
+              type="text"
+              id="studentGroup"
+              required
+              placeholder="Օրինակ՝ Ֆինանսներ-301"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm font-medium"
+            />
+          </div>
+
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-600 space-y-1">
+            <div class="font-bold text-slate-800 flex items-center gap-1.5">
+              <span>📌 Կարևոր ուղեցույց՝</span>
+            </div>
+            <p>• Խաչբառը կազմված է <strong>10 տերմինից</strong>՝ Թեմա 12.1, 12.2 և Թեմա 1-2 դասախոսություններից։</p>
+            <p>• Հայերեն <strong>«ՈՒ»</strong> տառը մուտքագրվում է երկու առանձին վանդակներում՝ <strong>«Ո»</strong> և <strong>«Ւ»</strong>։</p>
+            <p>• Հաղթողները դասակարգվում են ըստ ճիշտ բառերի քանակի և ծախսած նվազագույն ժամանակի։</p>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-3 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Սկսել Խաչբառը</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: CROSSWORD GAMEPLAY ==================== -->
+    <section id="quizSection" class="hidden space-y-5">
+      <!-- Active Clue Banner -->
+      <div class="bg-white rounded-2xl border border-indigo-200 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-start sm:items-center gap-3">
+          <span id="activeClueBadge" class="shrink-0 px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-extrabold text-xs uppercase tracking-wide">
+            1. Հորիզոնական
+          </span>
+          <p id="activeClueText" class="text-sm sm:text-base font-semibold text-slate-800 leading-snug">
+            Ընտրեք վանդակ կամ հարց՝ սկսելու համար
+          </p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span id="progressBadge" class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+            Լրացված՝ 0 / 10 բառ
+          </span>
+        </div>
+      </div>
+
+      <!-- Main Grid + Clues Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left/Center: Interactive Crossword Grid (7 cols on lg) -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Հայերեն Այբուբենի Ցանց (15 × 20)
+            </span>
+            <span class="text-xs text-indigo-600 font-semibold">
+              💡 «ՈՒ» = «Ո» + «Ւ» (երկու վանդակ)
+            </span>
+          </div>
+
+          <!-- Grid Wrapper -->
+          <div class="w-full max-w-[600px] mx-auto overflow-x-auto">
+            <div id="crosswordGrid" class="cw-grid min-w-[310px]"></div>
+          </div>
+
+          <!-- Action Buttons Bar -->
+          <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onclick="checkAnswers()"
+                id="checkBtn"
+                class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Ստուգել (Check)</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="clearHighlights()"
+                class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs sm:text-sm transition cursor-pointer"
+              >
+                Մաքրել գույները
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onclick="submitQuiz()"
+              id="submitBtn"
+              class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-200 transition flex items-center gap-2 cursor-pointer"
+            >
+              <span>Ավարտել և Ուղարկել</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Clues Panel (5 cols on lg) -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- Across Clues -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+              <h3 class="font-extrabold text-sm uppercase tracking-wider text-indigo-700 flex items-center gap-2">
+                <span>➡️ Հորիզոնական (Across)</span>
+              </h3>
+              <span class="text-xs font-semibold text-slate-400">5 հարց</span>
+            </div>
+            <ul id="acrossCluesList" class="space-y-2"></ul>
+          </div>
+
+          <!-- Down Clues -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+              <h3 class="font-extrabold text-sm uppercase tracking-wider text-blue-700 flex items-center gap-2">
+                <span>⬇️ Ուղղահայաց (Down)</span>
+              </h3>
+              <span class="text-xs font-semibold text-slate-400">5 հարց</span>
+            </div>
+            <ul id="downCluesList" class="space-y-2"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: REAL-TIME LEADERBOARD ==================== -->
+    <section id="leaderboardSection" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">🏆 Մրցույթի Առաջատարների Աղյուսակ</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+              Դասակարգումն իրականացվում է ըստ ճիշտ գուշակված բառերի քանակի (առավելագույնը՝ 10) և ծախսած նվազագույն ժամանակի։
+            </p>
+          </div>
+          <button
+            onclick="switchView('quiz')"
+            class="self-start sm:self-auto px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm border border-indigo-200 transition cursor-pointer"
+          >
+            ← Վերադառնալ Խաչբառին
+          </button>
+        </div>
+
+        <!-- Top 3 Podium -->
+        <div id="podiumContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6"></div>
+
+        <!-- Full Ranking Table -->
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Հորիզոնական</th>
+                <th class="py-3 px-4">Ուսանող</th>
+                <th class="py-3 px-4">Խումբ</th>
+                <th class="py-3 px-4 text-center">Ճիշտ բառեր</th>
+                <th class="py-3 px-4 text-center">Տառերի ճշգրտ.</th>
+                <th class="py-3 px-4 text-right">Ժամանակ</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: LECTURER DASHBOARD ==================== -->
+    <section id="lecturerSection" class="hidden space-y-6">
+      <!-- Password Gate -->
+      <div id="lecturerAuthGate" class="max-w-md mx-auto my-8 bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
+        <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center mb-4">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-900">Դասախոսի Կառավարման Վահանակ</h2>
+        <p class="text-xs text-slate-500 mt-1 mb-4">
+          Մուտքագրեք գաղտնաբառը՝ պատասխանների բանալին և ուսանողների արդյունքները տեսնելու համար։
+        </p>
+        <form id="lecturerLoginForm" class="space-y-3">
+          <input
+            type="password"
+            id="lecturerPasswordInput"
+            placeholder="Գաղտնաբառ (1234)"
+            required
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm"
+          />
+          <button
+            type="submit"
+            class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition cursor-pointer"
+          >
+            Մուտք գործել
+          </button>
+        </form>
+      </div>
+
+      <!-- Authenticated Lecturer Panel -->
+      <div id="lecturerDashboardContent" class="hidden space-y-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-xs font-bold uppercase text-slate-400">Մասնակիցներ</span>
+            <p id="statTotalStudents" class="text-2xl font-extrabold text-slate-900 mt-1">0</p>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-xs font-bold uppercase text-slate-400">Միջին Միավոր (10-ից)</span>
+            <p id="statAvgScore" class="text-2xl font-extrabold text-indigo-600 mt-1">0.0</p>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-xs font-bold uppercase text-slate-400">Միջին Ժամանակ</span>
+            <p id="statAvgTime" class="text-2xl font-extrabold text-emerald-600 mt-1">00:00</p>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <span class="text-xs font-bold uppercase text-slate-400">Կառավարում</span>
+            <div class="mt-2 flex items-center gap-2">
+              <button
+                id="resetLeaderboardBtn"
+                onclick="handleResetLeaderboard()"
+                class="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition cursor-pointer"
+              >
+                Զրոյացնել Արդյունքները
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Complete Answer Key Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+            <div>
+              <h3 class="text-lg font-extrabold text-slate-900">🔑 Պատասխանների Բանալի (10 Տերմին)</h3>
+              <p class="text-xs text-slate-500">Բոլոր բառերը, կոորդինատները և դասախոսական հղումները</p>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+              Ստուգված ցանց (15×20)
+            </span>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-extrabold uppercase text-slate-500">
+                  <th class="py-3 px-4">#</th>
+                  <th class="py-3 px-4">Ուղղություն</th>
+                  <th class="py-3 px-4">Բառը (Պատասխան)</th>
+                  <th class="py-3 px-4">Տառեր</th>
+                  <th class="py-3 px-4">Սկիզբ (Տող, Սյուն)</th>
+                  <th class="py-3 px-4">Հարց / Սահմանում (Դասախոսություն)</th>
+                </tr>
+              </thead>
+              <tbody id="answerKeyTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <span>ՀՀ Հարկային Օրենսգիրք • Ինտերակտիվ Ուսումնական Հարթակ</span>
+      <span>Թեմա 12.1 • Թեմա 12.2 • Թեմա 1 և Թեմա 2</span>
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * ============================================================================
+     * CROSSWORD DATA CONFIGURATION (10 VERIFIED TERMS FROM THE 4 LECTURE SLIDES)
+     * Grid dimensions: 20 rows (1..20) x 15 cols (1..15)
+     * Note: Armenian 'ՈՒ' is represented as two individual letters: 'Ո' and 'Ւ'
+     * ============================================================================
+     */
+    const GRID_ROWS = 20;
+    const GRID_COLS = 15;
+
+    const WORDS_DATA = [
+      {
+        id: 1,
+        number: 1,
+        direction: 'across',
+        word: 'ԲԵՌՆԱԳԻՐ',
+        row: 2,
+        col: 2,
+        topic: 'Թեմա 1, հոդվ. 55, 56',
+        clue: 'Ապրանքի տեղափոխությունը փաստաթղթավորելու համար մինչև տեղափոխությունը դուրս գրվող ուղեկցող հաշվարկային փաստաթուղթ (Թեմա 1, հոդվ. 55, 56)'
+      },
+      {
+        id: 2,
+        number: 2,
+        direction: 'down',
+        word: 'ԳՈՒՅՔԱՀԱՐԿ', // Գ-Ո-Ւ-Յ-Ք-Ա-Հ-Ա-Ր-Կ (10 letters, intersects #1 ԲԵՌՆԱԳԻՐ at (2,7)='Գ')
+        row: 2,
+        col: 7,
+        topic: 'Թեմա 12.1',
+        clue: 'ՀՀ-ում կիրառվող տեղական հարկի տեսակ, որը վճարվում է հարկման օբյեկտ համարվող գույքի արժեքից (Թեմա 12.1)'
+      },
+      {
+        id: 3,
+        number: 3,
+        direction: 'across',
+        word: 'ԲՅՈՒՋԵ', // Բ-Յ-Ո-Ւ-Ջ-Ե (6 letters, intersects #2 ԳՈՒՅՔԱՀԱՐԿ at (5,7)='Յ')
+        row: 5,
+        col: 6,
+        topic: 'Թեմա 12.1',
+        clue: 'Պետական կամ համայնքային դրամական ֆոնդ, որտեղ վճարվում են պարտադիր և անհատույց հարկերը (Թեմա 12.1)'
+      },
+      {
+        id: 4,
+        number: 4,
+        direction: 'across',
+        word: 'ՇՐՋՀԱՐԿ', // Շ-Ր-Ջ-Հ-Ա-Ր-Կ (7 letters, intersects #2 ԳՈՒՅՔԱՀԱՐԿ at (7,7)='Ա')
+        row: 7,
+        col: 3,
+        topic: 'Թեմա 12.2',
+        clue: 'Հարկման հատուկ համակարգում կիրառվող՝ ԱԱՀ-ին և (կամ) շահութահարկին փոխարինող պետական հարկ (կարճ անվանումը՝ 7 տառ) (Թեմա 12.2)'
+      },
+      {
+        id: 5,
+        number: 5,
+        direction: 'down',
+        word: 'ԼԻԶԻՆԳ', // Լ-Ի-Զ-Ի-Ն-Գ (6 letters, intersects #7 ԱՐՏՈՆՈՒԹՅՈՒՆ at (13,15)='Ն')
+        row: 9,
+        col: 15,
+        topic: 'Թեմա 1, հոդվ. 55',
+        clue: 'Գույքի վարձակալության տարատեսակ, որի առարկայի հանձնման-ընդունման ակտը համարվում է հաշվարկային փաստաթուղթ (Թեմա 1, հոդվ. 55)'
+      },
+      {
+        id: 6,
+        number: 6,
+        direction: 'across',
+        word: 'ՆՈՏԱՐ', // Ն-Ո-Տ-Ա-Ր (5 letters, intersects #2 ԳՈՒՅՔԱՀԱՐԿ at (10,7)='Ր')
+        row: 10,
+        col: 3,
+        topic: 'Թեմա 12.1',
+        clue: 'Կազմակերպությունների և ԱՁ-ների հետ միասին հարկման ընդհանուր կամ շրջանառության հարկի համակարգում գործող անձ (Թեմա 12.1)'
+      },
+      {
+        id: 7,
+        number: 7,
+        direction: 'down',
+        word: 'ՏՈՒՐՔ', // Տ-Ո-Ւ-Ր-Ք (5 letters, intersects #6 ՆՈՏԱՐ at (10,5)='Տ')
+        row: 10,
+        col: 5,
+        topic: 'Թեմա 12.1',
+        clue: 'ՀՀ-ում կիրառվող պետական կամ տեղական պարտադիր վճարի տեսակ՝ օրինակ պետական կամ տեղական ... (Թեմա 12.1)'
+      },
+      {
+        id: 8,
+        number: 8,
+        direction: 'across',
+        word: 'ԱԿՑԻԶ', // Ա-Կ-Ց-Ի-Զ (5 letters, intersects #5 ԼԻԶԻՆԳ at (11,15)='Զ')
+        row: 11,
+        col: 11,
+        topic: 'Թեմա 12.1',
+        clue: 'ՀՀ պետական հարկի տեսակ (կարճ անվանումը՝ 5 տառ), որը վճարվում է հատուկ ենթաակցիզային ապրանքների գործարքների դեպքում (Թեմա 12.1)'
+      },
+      {
+        id: 9,
+        number: 9,
+        direction: 'across',
+        word: 'ԱՐՏՈՆՈՒԹՅՈՒՆ', // Ա-Ր-Տ-Ո-Ն-Ո-Ւ-Թ-Յ-Ո-Ւ-Ն (12 letters, intersects #7 ՏՈՒՐՔ at (13,5)='Ր')
+        row: 13,
+        col: 4,
+        topic: 'Թեմա 2, հոդվ. 45',
+        clue: 'Հարկերի վճարման ընդհանուր կարգից բացառություն, որի արդյունքում նվազում կամ վերանում է հարկային պարտավորությունը (Թեմա 2, հոդվ. 45)'
+      },
+      {
+        id: 10,
+        number: 10,
+        direction: 'down',
+        word: 'ՈՒՂԵԿՑՈՂ', // Ո-Ւ-Ղ-Ե-Կ-Ց-Ո-Ղ (8 letters, intersects #9 ԱՐՏՈՆՈՒԹՅՈՒՆ at (13,13)='Ո')
+        row: 13,
+        col: 13,
+        topic: 'Թեմա 2, հոդվ. 57',
+        clue: 'ՀՀ տարածքում տեղափոխվող ապրանքին պարտադիր կցվող փաստաթղթի տեսակ՝ «... փաստաթուղթ» (Թեմա 2, հոդվ. 57)'
+      }
+    ];
+
+    // ============================================================================
+    // APPLICATION STATE
+    // ============================================================================
+    const STORAGE_KEY = 'arm_tax_crossword_leaderboard_v2';
+    let currentStudent = null; // { firstName, lastName, group }
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let isSubmitted = false;
+
+    // Grid map: key "r,c" -> { row, col, letter, numbers: [], wordIds: [] }
+    let cellMap = {};
+    let userInputs = {}; // key "r,c" -> single uppercase Armenian char
+    let selectedCell = { row: 2, col: 2 };
+    let activeDirection = 'across'; // 'across' | 'down'
+    let resetConfirmPending = false;
+
+    // ============================================================================
+    // INITIALIZATION & GRID COMPILATION
+    // ============================================================================
+    function buildGridData() {
+      cellMap = {};
+      WORDS_DATA.forEach(item => {
+        const chars = Array.from(item.word);
+        chars.forEach((ch, idx) => {
+          const r = item.direction === 'across' ? item.row : item.row + idx;
+          const c = item.direction === 'across' ? item.col + idx : item.col;
+          const key = `${r},${c}`;
+
+          if (!cellMap[key]) {
+            cellMap[key] = {
+              row: r,
+              col: c,
+              letter: ch,
+              numbers: [],
+              wordIds: []
+            };
+          } else if (cellMap[key].letter !== ch) {
+            console.error(`Grid conflict at (${r},${c}): expected ${cellMap[key].letter}, got ${ch}`);
+          }
+
+          if (idx === 0 && !cellMap[key].numbers.includes(item.number)) {
+            cellMap[key].numbers.push(item.number);
+          }
+          if (!cellMap[key].wordIds.includes(item.id)) {
+            cellMap[key].wordIds.push(item.id);
+          }
+        });
+      });
+    }
+
+    function renderGrid() {
+      const gridEl = document.getElementById('crosswordGrid');
+      gridEl.innerHTML = '';
+
+      for (let r = 1; r <= GRID_ROWS; r++) {
+        for (let c = 1; c <= GRID_COLS; c++) {
+          const key = `${r},${c}`;
+          const cellData = cellMap[key];
+          const cellDiv = document.createElement('div');
+          cellDiv.className = 'cw-cell';
+          cellDiv.dataset.row = r;
+          cellDiv.dataset.col = c;
+
+          if (cellData) {
+            cellDiv.classList.add('active-letter');
+
+            if (cellData.numbers.length > 0) {
+              const numSpan = document.createElement('span');
+              numSpan.className = 'cw-num';
+              numSpan.textContent = cellData.numbers.join('/');
+              cellDiv.appendChild(numSpan);
+            }
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.maxLength = 2; // Allow typing ՈՒ or single char, handled in input listener
+            input.className = 'cw-input';
+            input.dataset.row = r;
+            input.dataset.col = c;
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            input.value = userInputs[key] || '';
+
+            input.addEventListener('focus', () => handleCellSelect(r, c, false));
+            input.addEventListener('click', (e) => {
+              e.stopPropagation();
+              handleCellSelect(r, c, true);
+            });
+            input.addEventListener('input', (e) => handleCellInput(e, r, c));
+            input.addEventListener('keydown', (e) => handleCellKeydown(e, r, c));
+
+            cellDiv.appendChild(input);
+          }
+
+          gridEl.appendChild(cellDiv);
+        }
+      }
+
+      updateGridHighlights();
+    }
+
+    function renderClues() {
+      const acrossList = document.getElementById('acrossCluesList');
+      const downList = document.getElementById('downCluesList');
+      acrossList.innerHTML = '';
+      downList.innerHTML = '';
+
+      WORDS_DATA.forEach(item => {
+        const li = document.createElement('li');
+        li.id = `clue-item-${item.id}`;
+        li.className = 'p-2.5 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition cursor-pointer text-xs sm:text-sm flex items-start gap-2.5';
+        li.onclick = () => selectWordFromClue(item);
+
+        const letterCount = Array.from(item.word).length;
+        li.innerHTML = `
+          <span class="shrink-0 w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-extrabold text-xs flex items-center justify-center mt-0.5 clue-num-badge">
+            ${item.number}
+          </span>
+          <div class="flex-1">
+            <p class="text-slate-700 leading-snug">${item.clue}</p>
+            <span class="inline-block mt-1 text-[11px] font-semibold text-slate-400">(${letterCount} տառ)</span>
+          </div>
+        `;
+
+        if (item.direction === 'across') {
+          acrossList.appendChild(li);
+        } else {
+          downList.appendChild(li);
+        }
+      });
+    }
+
+    // ============================================================================
+    // INTERACTION & NAVIGATION LOGIC
+    // ============================================================================
+    function getActiveWord() {
+      const key = `${selectedCell.row},${selectedCell.col}`;
+      const cell = cellMap[key];
+      if (!cell) return WORDS_DATA[0];
+
+      // Find word matching activeDirection
+      let wordObj = WORDS_DATA.find(w => cell.wordIds.includes(w.id) && w.direction === activeDirection);
+      if (!wordObj) {
+        wordObj = WORDS_DATA.find(w => cell.wordIds.includes(w.id));
+        if (wordObj) activeDirection = wordObj.direction;
+      }
+      return wordObj || WORDS_DATA[0];
+    }
+
+    function handleCellSelect(r, c, isClick) {
+      const key = `${r},${c}`;
+      const cell = cellMap[key];
+      if (!cell) return;
+
+      if (isClick && selectedCell.row === r && selectedCell.col === c && cell.wordIds.length > 1) {
+        // Toggle direction at intersection
+        activeDirection = activeDirection === 'across' ? 'down' : 'across';
+      } else {
+        selectedCell = { row: r, col: c };
+        const hasCurrentDir = WORDS_DATA.some(w => cell.wordIds.includes(w.id) && w.direction === activeDirection);
+        if (!hasCurrentDir) {
+          const firstWord = WORDS_DATA.find(w => cell.wordIds.includes(w.id));
+          if (firstWord) activeDirection = firstWord.direction;
+        }
+      }
+
+      updateGridHighlights();
+    }
+
+    function selectWordFromClue(wordObj) {
+      selectedCell = { row: wordObj.row, col: wordObj.col };
+      activeDirection = wordObj.direction;
+      updateGridHighlights();
+      focusCellInput(wordObj.row, wordObj.col);
+    }
+
+    function focusCellInput(r, c) {
+      const input = document.querySelector(`.cw-input[data-row="${r}"][data-col="${c}"]`);
+      if (input) {
+        input.focus();
+      }
+    }
+
+    function handleCellInput(e, r, c) {
+      if (isSubmitted) {
+        e.target.value = userInputs[`${r},${c}`] || '';
+        return;
+      }
+
+      // Clear validation colors on edit
+      clearCellStatus(r, c);
+
+      let rawVal = e.target.value.toUpperCase().trim();
+      // Keep only Armenian letters (Unicode block \u0531-\u058F) or standard uppercase
+      const chars = Array.from(rawVal).filter(ch => /[\u0531-\u0556\u0561-\u0587]/.test(ch));
+
+      if (chars.length === 0) {
+        userInputs[`${r},${c}`] = '';
+        e.target.value = '';
+        updateProgressStats();
+        return;
+      }
+
+      // Take the newly entered Armenian character
+      const chosenChar = chars[chars.length - 1];
+      userInputs[`${r},${c}`] = chosenChar;
+      e.target.value = chosenChar;
+
+      updateProgressStats();
+      moveToNextCell(r, c);
+    }
+
+    function handleCellKeydown(e, r, c) {
+      if (e.key === 'Backspace') {
+        if (isSubmitted) return;
+        const key = `${r},${c}`;
+        clearCellStatus(r, c);
+        if (userInputs[key]) {
+          userInputs[key] = '';
+          e.target.value = '';
+          updateProgressStats();
+        } else {
+          moveToPrevCell(r, c);
+        }
+        e.preventDefault();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        activeDirection = 'across';
+        moveStep(r, c, 0, 1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        activeDirection = 'across';
+        moveStep(r, c, 0, -1);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeDirection = 'down';
+        moveStep(r, c, 1, 0);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeDirection = 'down';
+        moveStep(r, c, -1, 0);
+      }
+    }
+
+    function moveStep(r, c, dr, dc) {
+      let nr = r + dr;
+      let nc = c + dc;
+      while (nr >= 1 && nr <= GRID_ROWS && nc >= 1 && nc <= GRID_COLS) {
+        if (cellMap[`${nr},${nc}`]) {
+          selectedCell = { row: nr, col: nc };
+          updateGridHighlights();
+          focusCellInput(nr, nc);
+          return;
+        }
+        nr += dr;
+        nc += dc;
+      }
+    }
+
+    function moveToNextCell(r, c) {
+      const nr = activeDirection === 'across' ? r : r + 1;
+      const nc = activeDirection === 'across' ? c + 1 : c;
+      if (cellMap[`${nr},${nc}`]) {
+        selectedCell = { row: nr, col: nc };
+        updateGridHighlights();
+        focusCellInput(nr, nc);
+      }
+    }
+
+    function moveToPrevCell(r, c) {
+      const nr = activeDirection === 'across' ? r : r - 1;
+      const nc = activeDirection === 'across' ? c - 1 : c;
+      if (cellMap[`${nr},${nc}`]) {
+        selectedCell = { row: nr, col: nc };
+        userInputs[`${nr},${nc}`] = '';
+        const prevInput = document.querySelector(`.cw-input[data-row="${nr}"][data-col="${nc}"]`);
+        if (prevInput) prevInput.value = '';
+        clearCellStatus(nr, nc);
+        updateProgressStats();
+        updateGridHighlights();
+        focusCellInput(nr, nc);
+      }
+    }
+
+    function updateGridHighlights() {
+      const activeWord = getActiveWord();
+      const activeWordCoords = new Set();
+
+      if (activeWord) {
+        const len = Array.from(activeWord.word).length;
+        for (let i = 0; i < len; i++) {
+          const wr = activeWord.direction === 'across' ? activeWord.row : activeWord.row + i;
+          const wc = activeWord.direction === 'across' ? activeWord.col + i : activeWord.col;
+          activeWordCoords.add(`${wr},${wc}`);
+        }
+      }
+
+      document.querySelectorAll('.cw-cell.active-letter').forEach(cellEl => {
+        const r = Number(cellEl.dataset.row);
+        const c = Number(cellEl.dataset.col);
+        const key = `${r},${c}`;
+
+        cellEl.classList.remove('in-active-word', 'is-selected');
+        if (activeWordCoords.has(key)) {
+          cellEl.classList.add('in-active-word');
+        }
+        if (selectedCell.row === r && selectedCell.col === c) {
+          cellEl.classList.add('is-selected');
+        }
+      });
+
+      // Highlight active clue in sidebar & top banner
+      document.querySelectorAll('#acrossCluesList li, #downCluesList li').forEach(li => {
+        li.classList.remove('bg-indigo-50', 'border-indigo-400', 'ring-1', 'ring-indigo-300');
+      });
+
+      if (activeWord) {
+        const activeLi = document.getElementById(`clue-item-${activeWord.id}`);
+        if (activeLi) {
+          activeLi.classList.add('bg-indigo-50', 'border-indigo-400', 'ring-1', 'ring-indigo-300');
+        }
+        const dirText = activeWord.direction === 'across' ? 'Հորիզոնական' : 'Ուղղահայաց';
+        document.getElementById('activeClueBadge').textContent = `${activeWord.number}. ${dirText}`;
+        document.getElementById('activeClueText').textContent = activeWord.clue;
+      }
+    }
+
+    function clearCellStatus(r, c) {
+      const cellEl = document.querySelector(`.cw-cell[data-row="${r}"][data-col="${c}"]`);
+      if (cellEl) {
+        cellEl.classList.remove('status-correct', 'status-wrong');
+      }
+    }
+
+    function clearHighlights() {
+      document.querySelectorAll('.cw-cell.active-letter').forEach(el => {
+        el.classList.remove('status-correct', 'status-wrong');
+      });
+    }
+
+    // ============================================================================
+    // EVALUATION, CHECK & SUBMIT LOGIC
+    // ============================================================================
+    function evaluateAnswers() {
+      let correctWords = 0;
+      let correctLetters = 0;
+      const totalLetters = Object.keys(cellMap).length;
+
+      Object.values(cellMap).forEach(cell => {
+        const entered = (userInputs[`${cell.row},${cell.col}`] || '').toUpperCase();
+        if (entered === cell.letter) {
+          correctLetters++;
+        }
+      });
+
+      WORDS_DATA.forEach(item => {
+        const chars = Array.from(item.word);
+        let wordMatches = true;
+        chars.forEach((ch, idx) => {
+          const r = item.direction === 'across' ? item.row : item.row + idx;
+          const c = item.direction === 'across' ? item.col + idx : item.col;
+          const entered = (userInputs[`${r},${c}`] || '').toUpperCase();
+          if (entered !== ch) {
+            wordMatches = false;
+          }
+        });
+        if (wordMatches) {
+          correctWords++;
+        }
+      });
+
+      return {
+        correctWords,
+        totalWords: WORDS_DATA.length,
+        correctLetters,
+        totalLetters,
+        accuracyPct: Math.round((correctLetters / totalLetters) * 100)
+      };
+    }
+
+    function updateProgressStats() {
+      let completedWords = 0;
+      WORDS_DATA.forEach(item => {
+        const chars = Array.from(item.word);
+        const allFilled = chars.every((_, idx) => {
+          const r = item.direction === 'across' ? item.row : item.row + idx;
+          const c = item.direction === 'across' ? item.col + idx : item.col;
+          return Boolean(userInputs[`${r},${c}`]);
+        });
+        if (allFilled) completedWords++;
+      });
+
+      document.getElementById('progressBadge').textContent = `Լրացված՝ ${completedWords} / ${WORDS_DATA.length} բառ`;
+    }
+
+    function checkAnswers() {
+      let filledCount = 0;
+      Object.values(cellMap).forEach(cell => {
+        const key = `${cell.row},${cell.col}`;
+        const entered = (userInputs[key] || '').toUpperCase();
+        const cellEl = document.querySelector(`.cw-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
+        if (!cellEl) return;
+
+        cellEl.classList.remove('status-correct', 'status-wrong');
+        if (entered) {
+          filledCount++;
+          if (entered === cell.letter) {
+            cellEl.classList.add('status-correct');
+          } else {
+            cellEl.classList.add('status-wrong');
+          }
+        }
+      });
+
+      if (filledCount === 0) {
+        showToast('Նախ մուտքագրեք առնվազն մեկ տառ՝ ստուգելու համար։', 'warning');
+        return;
+      }
+
+      const stats = evaluateAnswers();
+      showToast(
+        `Ստուգում՝ ${stats.correctWords}/10 ճիշտ բառ (${stats.correctLetters}/${stats.totalLetters} ճիշտ տառ)։`,
+        stats.correctWords === 10 ? 'success' : 'info'
+      );
+    }
+
+    function submitQuiz() {
+      if (!currentStudent) {
+        showToast('Խնդրում ենք նախ մուտք գործել։', 'warning');
+        return;
+      }
+      if (isSubmitted) {
+        switchView('leaderboard');
+        return;
+      }
+
+      isSubmitted = true;
+      stopTimer();
+      checkAnswers();
+
+      // Lock inputs
+      document.querySelectorAll('.cw-input').forEach(inp => {
+        inp.readOnly = true;
+      });
+
+      const stats = evaluateAnswers();
+      const entry = {
+        id: Date.now(),
+        firstName: currentStudent.firstName,
+        lastName: currentStudent.lastName,
+        group: currentStudent.group,
+        score: stats.correctWords,
+        totalWords: stats.totalWords,
+        accuracyPct: stats.accuracyPct,
+        seconds: elapsedSeconds,
+        submittedAt: new Date().toLocaleTimeString('hy-AM', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      const entries = getLeaderboardEntries();
+      entries.push(entry);
+      saveLeaderboardEntries(entries);
+      renderLeaderboard();
+      renderLecturerStats();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.innerHTML = '<span>Արդյունքն ուղարկված է ✓</span>';
+      submitBtn.classList.replace('bg-emerald-600', 'bg-slate-700');
+
+      showToast(`Շնորհավորում ենք, ${currentStudent.firstName}։ Արդյունքը՝ ${stats.correctWords}/10 բառ (${formatTime(elapsedSeconds)})։`, 'success');
+
+      setTimeout(() => {
+        switchView('leaderboard');
+      }, 1200);
+    }
+
+    // ============================================================================
+    // TIMER & STUDENT AUTH
+    // ============================================================================
+    function startTimer() {
+      stopTimer();
+      elapsedSeconds = 0;
+      document.getElementById('timerDisplay').textContent = '00:00';
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        document.getElementById('timerDisplay').textContent = formatTime(elapsedSeconds);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function formatTime(totalSec) {
+      const mins = Math.floor(totalSec / 60).toString().padStart(2, '0');
+      const secs = (totalSec % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const group = document.getElementById('studentGroup').value.trim();
+
+      if (!firstName || !lastName || !group) return;
+
+      currentStudent = { firstName, lastName, group };
+      userInputs = {};
+      isSubmitted = false;
+
+      document.getElementById('headerStudentName').textContent = `${firstName} ${lastName}`;
+      document.getElementById('headerStudentGroup').textContent = group;
+      document.getElementById('studentStatusBar').classList.remove('hidden');
+      document.getElementById('studentStatusBar').classList.add('flex');
+
+      renderGrid();
+      updateProgressStats();
+      startTimer();
+      switchView('quiz');
+      focusCellInput(2, 2);
+      showToast(`Բարի գալուստ, ${firstName}։ Հաջողություն մրցույթում։`, 'info');
+    });
+
+    // ============================================================================
+    // LEADERBOARD STORAGE & RENDERING
+    // ============================================================================
+    function getLeaderboardEntries() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          // Seed initial sample entries for realistic classroom context
+          const initialSeed = [
+            {
+              id: 101,
+              firstName: 'Անի',
+              lastName: 'Հակոբյան',
+              group: 'Ֆինանսներ-301',
+              score: 10,
+              totalWords: 10,
+              accuracyPct: 100,
+              seconds: 164,
+              submittedAt: '10:15'
+            },
+            {
+              id: 102,
+              firstName: 'Դավիթ',
+              lastName: 'Պետրոսյան',
+              group: 'Հաշվապահություն-302',
+              score: 9,
+              totalWords: 10,
+              accuracyPct: 94,
+              seconds: 192,
+              submittedAt: '10:18'
+            },
+            {
+              id: 103,
+              firstName: 'Մարիամ',
+              lastName: 'Գրիգորյան',
+              group: 'Ֆինանսներ-301',
+              score: 8,
+              totalWords: 10,
+              accuracyPct: 88,
+              seconds: 215,
+              submittedAt: '10:21'
+            }
+          ];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(initialSeed));
+          return initialSeed;
+        }
+        return JSON.parse(raw);
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveLeaderboardEntries(entries) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    function getSortedLeaderboard() {
+      const entries = getLeaderboardEntries();
+      return entries.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.accuracyPct !== a.accuracyPct) return b.accuracyPct - a.accuracyPct;
+        return a.seconds - b.seconds;
+      });
+    }
+
+    function renderLeaderboard() {
+      const sorted = getSortedLeaderboard();
+      document.getElementById('leaderboardCountBadge').textContent = sorted.length;
+
+      const podiumEl = document.getElementById('podiumContainer');
+      const tbody = document.getElementById('leaderboardTableBody');
+      podiumEl.innerHTML = '';
+      tbody.innerHTML = '';
+
+      if (sorted.length === 0) {
+        podiumEl.innerHTML = `
+          <div class="col-span-3 text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 text-sm">
+            Դեռևս գրանցված արդյունքներ չկան։ Եղեք առաջինը։
+          </div>
+        `;
+        return;
+      }
+
+      // Render Top 3 Podium
+      const medals = [
+        { rank: 1, icon: '🥇', bg: 'from-amber-50 to-yellow-100/70', border: 'border-amber-300', badge: 'bg-amber-500 text-white' },
+        { rank: 2, icon: '🥈', bg: 'from-slate-50 to-slate-200/60', border: 'border-slate-300', badge: 'bg-slate-600 text-white' },
+        { rank: 3, icon: '🥉', bg: 'from-orange-50 to-amber-100/50', border: 'border-orange-200', badge: 'bg-orange-600 text-white' }
+      ];
+
+      sorted.slice(0, 3).forEach((student, idx) => {
+        const m = medals[idx];
+        const card = document.createElement('div');
+        card.className = `rounded-2xl bg-gradient-to-br ${m.bg} border ${m.border} p-4 shadow-xs flex flex-col justify-between`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-2xl">${m.icon}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold ${m.badge}">
+              ${m.rank}-ին տեղ
+            </span>
+          </div>
+          <div class="my-3">
+            <h4 class="font-extrabold text-base text-slate-900">${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</h4>
+            <p class="text-xs font-medium text-slate-500">${escapeHtml(student.group)}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-200/70 flex items-center justify-between text-xs font-bold">
+            <span class="text-indigo-700">${student.score} / 10 բառ</span>
+            <span class="font-mono text-slate-700">⏱ ${formatTime(student.seconds)}</span>
+          </div>
+        `;
+        podiumEl.appendChild(card);
+      });
+
+      // Render Full Table
+      sorted.forEach((student, idx) => {
+        const tr = document.createElement('tr');
+        const isCurrentUser = currentStudent &&
+          student.firstName === currentStudent.firstName &&
+          student.lastName === currentStudent.lastName &&
+          student.group === currentStudent.group;
+
+        tr.className = isCurrentUser ? 'bg-indigo-50/70 font-semibold' : 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-extrabold text-slate-700">#${idx + 1}</td>
+          <td class="py-3 px-4 text-slate-900 font-bold">
+            ${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}
+            ${isCurrentUser ? '<span class="ml-1.5 px-2 py-0.5 text-[10px] rounded-full bg-indigo-600 text-white">Դուք</span>' : ''}
+          </td>
+          <td class="py-3 px-4 text-slate-600 text-xs">${escapeHtml(student.group)}</td>
+          <td class="py-3 px-4 text-center">
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-xs">
+              ${student.score} / 10
+            </span>
+          </td>
+          <td class="py-3 px-4 text-center text-xs font-semibold text-slate-600">${student.accuracyPct}%</td>
+          <td class="py-3 px-4 text-right font-mono font-bold text-slate-800">${formatTime(student.seconds)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ============================================================================
+    // LECTURER DASHBOARD & ANSWER KEY
+    // ============================================================================
+    document.getElementById('lecturerLoginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pwd = document.getElementById('lecturerPasswordInput').value;
+      if (pwd === '1234') {
+        document.getElementById('lecturerAuthGate').classList.add('hidden');
+        document.getElementById('lecturerDashboardContent').classList.remove('hidden');
+        renderLecturerStats();
+        renderAnswerKeyTable();
+        showToast('Դասախոսի վահանակը բացված է։', 'success');
+      } else {
+        showToast('Սխալ գաղտնաբառ։ Փորձեք «1234»։', 'error');
+      }
+    });
+
+    function renderLecturerStats() {
+      const entries = getLeaderboardEntries();
+      document.getElementById('statTotalStudents').textContent = entries.length;
+
+      if (entries.length === 0) {
+        document.getElementById('statAvgScore').textContent = '0.0';
+        document.getElementById('statAvgTime').textContent = '00:00';
+        return;
+      }
+
+      const avgScore = entries.reduce((acc, item) => acc + item.score, 0) / entries.length;
+      const avgSec = Math.round(entries.reduce((acc, item) => acc + item.seconds, 0) / entries.length);
+
+      document.getElementById('statAvgScore').textContent = avgScore.toFixed(1);
+      document.getElementById('statAvgTime').textContent = formatTime(avgSec);
+    }
+
+    function renderAnswerKeyTable() {
+      const tbody = document.getElementById('answerKeyTableBody');
+      tbody.innerHTML = '';
+
+      WORDS_DATA.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        const dirLabel = item.direction === 'across' ? 'Հորիզոնական ➡️' : 'Ուղղահայաց ⬇️';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-extrabold text-slate-700">${item.number}</td>
+          <td class="py-3 px-4 text-xs font-semibold text-slate-600">${dirLabel}</td>
+          <td class="py-3 px-4 font-extrabold text-indigo-700 tracking-wide">${item.word}</td>
+          <td class="py-3 px-4 text-xs text-slate-500 font-bold">${Array.from(item.word).length}</td>
+          <td class="py-3 px-4 text-xs font-mono text-slate-600">Տող ${item.row}, Սյուն ${item.col}</td>
+          <td class="py-3 px-4 text-xs text-slate-700 leading-relaxed">${item.clue}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function handleResetLeaderboard() {
+      const btn = document.getElementById('resetLeaderboardBtn');
+      if (!resetConfirmPending) {
+        resetConfirmPending = true;
+        btn.textContent = 'Հաստատե՞լ զրոյացումը (Սեղմեք կրկին)';
+        btn.classList.replace('bg-rose-50', 'bg-rose-600');
+        btn.classList.replace('text-rose-700', 'text-white');
+        setTimeout(() => {
+          resetConfirmPending = false;
+          btn.textContent = 'Զրոյացնել Արդյունքները';
+          btn.classList.replace('bg-rose-600', 'bg-rose-50');
+          btn.classList.replace('text-white', 'text-rose-700');
+        }, 4000);
+        return;
+      }
+
+      resetConfirmPending = false;
+      btn.textContent = 'Զրոյացնել Արդյունքները';
+      btn.classList.replace('bg-rose-600', 'bg-rose-50');
+      btn.classList.replace('text-white', 'text-rose-700');
+
+      saveLeaderboardEntries([]);
+      renderLeaderboard();
+      renderLecturerStats();
+      showToast('Առաջատարների աղյուսակը հաջողությամբ զրոյացվեց։', 'info');
+    }
+
+    // ============================================================================
+    // VIEW SWITCHER & TOAST NOTIFICATIONS
+    // ============================================================================
+    function switchView(viewName) {
+      const loginSec = document.getElementById('loginSection');
+      const quizSec = document.getElementById('quizSection');
+      const lbSec = document.getElementById('leaderboardSection');
+      const lecSec = document.getElementById('lecturerSection');
+
+      loginSec.classList.add('hidden');
+      quizSec.classList.add('hidden');
+      lbSec.classList.add('hidden');
+      lecSec.classList.add('hidden');
+
+      const navBtns = ['navQuizBtn', 'navLeaderboardBtn', 'navLecturerBtn'];
+      navBtns.forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('bg-white', 'text-indigo-700', 'shadow-xs');
+        el.classList.add('text-slate-600');
+      });
+
+      if (viewName === 'quiz') {
+        if (!currentStudent) {
+          loginSec.classList.remove('hidden');
+        } else {
+          quizSec.classList.remove('hidden');
+        }
+        activateNavBtn('navQuizBtn');
+      } else if (viewName === 'leaderboard') {
+        renderLeaderboard();
+        lbSec.classList.remove('hidden');
+        activateNavBtn('navLeaderboardBtn');
+      } else if (viewName === 'lecturer') {
+        lecSec.classList.remove('hidden');
+        activateNavBtn('navLecturerBtn');
+      }
+    }
+
+    function activateNavBtn(id) {
+      const el = document.getElementById(id);
+      el.classList.add('bg-white', 'text-indigo-700', 'shadow-xs');
+      el.classList.remove('text-slate-600');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-900 text-white border-emerald-700',
+        warning: 'bg-amber-900 text-white border-amber-700',
+        error: 'bg-rose-900 text-white border-rose-700',
+        info: 'bg-slate-900 text-white border-slate-700'
+      };
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs sm:text-sm font-semibold transition-all duration-300 ${colors[type] || colors.info}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3600);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Boot Application
+    window.addEventListener('DOMContentLoaded', () => {
+      buildGridData();
+      renderClues();
+      renderLeaderboard();
+      switchView('quiz');
+    });
+  </script>
+</body>
+</html>
